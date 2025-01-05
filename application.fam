@@ -1,0 +1,16 @@
+# qv. https://github.com/flipperdevices/flipperzero-firmware/blob/dev/documentation/AppManifests.md
+
+App(
+    appid="helloi2cusb",
+    name="USB I2C",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="app_main",
+    cdefines=["APP_HELLOWORLD"],
+    requires=[
+        "gui",
+    ],
+    stack_size=3 * 1024,
+    order=20,
+    fap_icon="demo.png",
+    fap_category="demo",
+)
