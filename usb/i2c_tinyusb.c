@@ -5,10 +5,11 @@
 
 #define DEBUG
 
-static uint8_t status = STATUS_IDLE;
 static uint16_t delay = 0;
+static uint8_t i2c_status = STATUS_IDLE;
 static uint8_t i2c_reply_buf[EP_DEFAULT_SIZE];
-static const unsigned long func = I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL | I2C_FUNC_NOSTART;
+static FuriSemaphore *i2c_state_sem;
+static const unsigned long func = I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
 
 /* string descriptors */
 static const struct usb_string_descriptor dev_manuf_desc = USB_STRING_DESC("Flipper Devices");
@@ -91,8 +92,8 @@ static void usb_i2c_init(usbd_device* dev, FuriHalUsbInterface* intf, void* ctx)
     // lock the i2c bus through the prog runs
     furi_hal_i2c_acquire(&furi_hal_i2c_handle_external);
 
-    if(usbd.i2c_state_sem == NULL){ 
-        usbd.i2c_state_sem = furi_semaphore_alloc(1, 1);
+    if(i2c_state_sem == NULL){ 
+        i2c_state_sem = furi_semaphore_alloc(1, 1);
     }
 
     usbd_connect(dev, true);
@@ -105,8 +106,8 @@ static void usb_i2c_deinit(usbd_device* dev) {
     // unlock i2c bus
     furi_hal_i2c_release(&furi_hal_i2c_handle_external);
     
-    if(usbd.i2c_state_sem != NULL){ 
-        furi_semaphore_free(usbd.i2c_state_sem);
+    if(i2c_state_sem != NULL){ 
+        furi_semaphore_free(i2c_state_sem);
     }
 
 }
@@ -216,41 +217,76 @@ static usbd_respond
             return usbd_fail;
         }
 
-        furi_semaphore_acquire(usbd.i2c_state_sem, FuriWaitForever);
+#ifdef DEBUG
+        furi_log_puts("\n\r---\n\r");
+        furi_log_puts("cmd: "); log8bits(cmd); furi_log_puts("\n\r");
+        furi_log_puts("addr: "); log8bits(addr); furi_log_puts("\n\r");
+        furi_log_puts("size: "); log16bits(size); furi_log_puts("\n\r");
+        furi_log_puts("wValue: "); log8bits(req->wValue); furi_log_puts("\n\r");
+#endif
+
+        furi_semaphore_acquire(i2c_state_sem, FuriWaitForever);
         // TODO: i2c-detect works (maybe ?), read/write needs to be tested.
         // TODO: use worker thread to handle the following actions
         if(BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_DEVTOHOST))) {
             if(do_read) { // read
                 addr = addr << 1;
-                status = i2c_read(addr, i2c_reply_buf, size);
-
+                i2c_status = i2c_read(addr, i2c_reply_buf, size);
+#ifdef DEBUG
+            if(i2c_status == STATUS_ADDRESS_ACK) {
+                furi_log_puts("read ok\n\r");
+                furi_log_puts("data: ");
+                for(uint16_t i = 0; i < size; i++) {
+                    log8bits(i2c_reply_buf[i]);
+                }
+            } else {
+                furi_log_puts("read failed\n\r");
+            }
+#endif 
                 dev->status.data_ptr = i2c_reply_buf;
                 dev->status.data_count = size;
             }
         } else if(BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_HOSTTODEV))){
             if(!do_read && size == 0) { // check ready, used by i2c scanning
                 addr = addr << 1;
-                status = i2c_device_ready(addr);
-
+                i2c_status = i2c_device_ready(addr);
+#ifdef DEBUG
+                if(i2c_status == STATUS_ADDRESS_ACK) {
+                    furi_log_puts("i2c devcheck ack\n\r");
+                } else {
+                    furi_log_puts("i2c devcheck nack\n\r");
+                }  
+#endif 
                 dev->status.data_ptr = i2c_reply_buf;
                 dev->status.data_count = 0;
             } else if(!do_read && size != 0) { // write
                 addr = addr << 1;
-                status = i2c_write(addr, req->data, size);
+                i2c_status = i2c_write(addr, req->data, size);
+#ifdef DEBUG
+                if(i2c_status == STATUS_ADDRESS_ACK) {
+                    furi_log_puts("write ok\n\r");
+                    furi_log_puts("data: ");
+                    for(uint16_t i = 0; i < size; i++) {
+                        log8bits(i2c_reply_buf[i]);
+                    }
+                } else {
+                    furi_log_puts("write failed\n\r");
+                }  
+#endif          
             }
         }else {
             furi_crash("unimplemented i2c-usb cmd");
         }
-        furi_semaphore_release(usbd.i2c_state_sem);
+        furi_semaphore_release(i2c_state_sem);
 
         return usbd_ack;
 
     case CMD_GET_STATUS:
-        furi_semaphore_acquire(usbd.i2c_state_sem, FuriWaitForever);
-        memcpy(i2c_reply_buf, &status, sizeof(status));
+        furi_semaphore_acquire(i2c_state_sem, FuriWaitForever);
+        memcpy(i2c_reply_buf, &i2c_status, sizeof(i2c_status));
         dev->status.data_ptr = i2c_reply_buf;
-        dev->status.data_count = sizeof(status);
-        furi_semaphore_release(usbd.i2c_state_sem);
+        dev->status.data_count = sizeof(i2c_status);
+        furi_semaphore_release(i2c_state_sem);
 
         return usbd_ack;
 

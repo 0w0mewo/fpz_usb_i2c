@@ -25,7 +25,6 @@ struct UsbI2Cdevice {
     usbd_device* usb_dev;
     FuriHalUsbInterface* prev_intf;
     bool usb_connected;
-    FuriSemaphore *i2c_state_sem;
 };
 
 FuriStatus usb_i2c_connect();
