@@ -228,7 +228,7 @@ static usbd_respond
         furi_semaphore_acquire(i2c_state_sem, FuriWaitForever);
         // TODO: i2c-detect works (maybe ?), read/write needs to be tested.
         // TODO: use worker thread to handle the following actions
-        if(BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_DEVTOHOST))) {
+        if(IS_BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_DEVTOHOST))) {
             if(do_read) { // read
                 addr = addr << 1;
                 i2c_status = i2c_read(addr, i2c_reply_buf, size);
@@ -246,7 +246,7 @@ static usbd_respond
                 dev->status.data_ptr = i2c_reply_buf;
                 dev->status.data_count = size;
             }
-        } else if(BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_HOSTTODEV))){
+        } else if(IS_BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_HOSTTODEV))){
             if(!do_read && size == 0) { // check ready, used by i2c scanning
                 addr = addr << 1;
                 i2c_status = i2c_device_ready(addr);

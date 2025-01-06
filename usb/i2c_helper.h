@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define I2C_TIMEOUT 6
+#define IS_BITS_SET(x, y) ((x & y) == y)
 
 uint8_t i2c_read(uint8_t dev_addr, uint8_t* buf, uint16_t len);
 uint8_t i2c_write(uint8_t dev_addr, uint8_t* buf, uint16_t len);

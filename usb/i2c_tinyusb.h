@@ -19,7 +19,7 @@
 #define LOG_TAG "i2c-tiny-usb"
 
 #define HIGH8_WORD(x) ((x >> 8) & 0xff)
-#define BITS_SET(x, y) ((x & y) == y)
+
 
 struct UsbI2Cdevice {
     usbd_device* usb_dev;
