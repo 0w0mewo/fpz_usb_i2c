@@ -4,6 +4,7 @@
 #include <furi.h>
 #include <gui/gui.h>
 #include <gui/view_dispatcher.h>
+#include "views/usbi2c_view.h"
 
 // app
 typedef struct {
@@ -11,7 +12,7 @@ typedef struct {
     ViewDispatcher* view_dispatcher; // view dispacther of the gui
 
     // views
-    HelloWorldView* helloworld_view;
+    UsbI2cView* usbi2c_view;
 } HelloUSBApp;
 
 HelloUSBApp* app_new(void);

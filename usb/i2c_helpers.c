@@ -6,22 +6,20 @@
 static FuriHalI2cBusHandle* i2cbus = &furi_hal_i2c_handle_external;
 
 uint8_t i2c_read(uint8_t dev_addr, uint8_t* buf, uint16_t len) {
-    bool ok = false;
+    bool ok = false;    
+    FuriHalI2cBegin begin = FuriHalI2cBeginStart;
+    FuriHalI2cEnd end = FuriHalI2cEndStop;
 
-    // furi_hal_i2c_acquire(i2cbus);
-    ok = furi_hal_i2c_rx(i2cbus, dev_addr, buf, len, I2C_TIMEOUT);
-    // furi_hal_i2c_release(i2cbus);
-
+    ok = furi_hal_i2c_rx_ext(i2cbus, dev_addr, false, buf, len, begin, end, I2C_TIMEOUT);
     return (ok ? STATUS_ADDRESS_ACK : STATUS_ADDRESS_NACK);
 }
 
 uint8_t i2c_write(uint8_t dev_addr, uint8_t* buf, uint16_t len) {
     bool ok = false;
+    FuriHalI2cBegin begin = FuriHalI2cBeginStart;
+    FuriHalI2cEnd end = FuriHalI2cEndStop;
 
-    // furi_hal_i2c_acquire(&furi_hal_i2c_handle_external);
-    ok = furi_hal_i2c_tx(&furi_hal_i2c_handle_external, dev_addr, buf, len, I2C_TIMEOUT);
-    // furi_hal_i2c_release(&furi_hal_i2c_handle_external);
-
+    ok = furi_hal_i2c_tx_ext(i2cbus, dev_addr, false, buf, len, begin, end, I2C_TIMEOUT);
     return (ok ? STATUS_ADDRESS_ACK : STATUS_ADDRESS_NACK);
 }
 

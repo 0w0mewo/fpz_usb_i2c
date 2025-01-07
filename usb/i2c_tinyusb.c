@@ -267,7 +267,7 @@ static usbd_respond
                     furi_log_puts("write ok\n\r");
                     furi_log_puts("data: ");
                     for(uint16_t i = 0; i < size; i++) {
-                        log8bits(i2c_reply_buf[i]);
+                        log8bits(req->data[i]);
                     }
                 } else {
                     furi_log_puts("write failed\n\r");

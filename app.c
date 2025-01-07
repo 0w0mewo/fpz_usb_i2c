@@ -1,4 +1,4 @@
-#include "views/helloworld_view.h"
+#include "views/usbi2c_view.h"
 #include "app.h"
 
 static void register_view(ViewDispatcher* dispatcher, View* view, uint32_t viewid);
@@ -30,9 +30,8 @@ HelloUSBApp* app_new(void) {
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
 
     // attach views to the dispatcher
-    // helloworld view
-    app->helloworld_view = helloworld_view_new();
-    register_view(app->view_dispatcher, helloworld_view_get_view(app->helloworld_view), 0xff);
+    app->usbi2c_view = usbi2c_view_new();
+    register_view(app->view_dispatcher, usbi2c_view_get_view(app->usbi2c_view), 0xff);
 
     // switch to default view
     view_dispatcher_switch_to_view(app->view_dispatcher, 0xff);
@@ -45,7 +44,7 @@ void app_delete(HelloUSBApp* app) {
 
     // delete views
     view_dispatcher_remove_view(app->view_dispatcher, 0xff);
-    helloworld_view_delete(app->helloworld_view); // hello world view
+    usbi2c_view_delete(app->usbi2c_view);
 
     // delete view dispatcher
     view_dispatcher_free(app->view_dispatcher);
@@ -66,7 +65,7 @@ static void register_view(ViewDispatcher* dispatcher, View* view, uint32_t viewi
 }
 
 static uint32_t view_exit(void* ctx) {
-    furi_assert(ctx);
+    UNUSED(ctx);
 
     return VIEW_NONE;
 }
