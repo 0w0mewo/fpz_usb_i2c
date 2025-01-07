@@ -3,7 +3,7 @@
 #include "i2c_tinyusb.h"
 #include "i2c_helper.h"
 
-#define DEBUG
+// #define DEBUG
 
 static uint16_t delay = 0;
 static uint8_t i2c_status = STATUS_IDLE;
@@ -217,6 +217,8 @@ static usbd_respond
             return usbd_fail;
         }
 
+        addr = addr << 1;
+
 #ifdef DEBUG
         furi_log_puts("\n\r---\n\r");
         furi_log_puts("cmd: "); log8bits(cmd); furi_log_puts("\n\r");
@@ -230,7 +232,6 @@ static usbd_respond
         // TODO: use worker thread to handle the following actions
         if(IS_BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_DEVTOHOST))) {
             if(do_read) { // read
-                addr = addr << 1;
                 i2c_status = i2c_read(addr, i2c_reply_buf, size);
 #ifdef DEBUG
             if(i2c_status == STATUS_ADDRESS_ACK) {
@@ -248,7 +249,6 @@ static usbd_respond
             }
         } else if(IS_BITS_SET(usb_req_type, (USB_REQ_INTERFACE | USB_REQ_HOSTTODEV))){
             if(!do_read && size == 0) { // check ready, used by i2c scanning
-                addr = addr << 1;
                 i2c_status = i2c_device_ready(addr);
 #ifdef DEBUG
                 if(i2c_status == STATUS_ADDRESS_ACK) {
@@ -260,7 +260,6 @@ static usbd_respond
                 dev->status.data_ptr = i2c_reply_buf;
                 dev->status.data_count = 0;
             } else if(!do_read && size != 0) { // write
-                addr = addr << 1;
                 i2c_status = i2c_write(addr, req->data, size);
 #ifdef DEBUG
                 if(i2c_status == STATUS_ADDRESS_ACK) {
